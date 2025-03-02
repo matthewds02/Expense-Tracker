@@ -20,13 +20,13 @@ import { TransactionService, Transaction } from '../../transaction.service';
 })
 
 export class DashboardComponent {
-  @ViewChild(BaseChartDirective) chart?: BaseChartDirective; // Reference the chart directive
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   editingIndex: number | null = null;
   balance: number = 0;
   income: number = 0;
   expenses: number = 0;
-  transactionType: string = 'income'; // New field for transaction type
+  transactionType: string = 'income';
   description: string = '';
   amount: number = 0; 
 
@@ -34,12 +34,11 @@ export class DashboardComponent {
 
   constructor(private supabaseService: SupabaseService, private transactionService: TransactionService) {}
 
-  // Grafiekdata
   chartData: ChartData<'bar'> = {
     labels: ['Income', 'Expense'],
     datasets: [
       {
-        data: [0, 0], // Income vs Expense data
+        data: [0, 0],
         backgroundColor: ['#4CAF50', '#F44336'],
         label: 'Transactions'
       }
@@ -86,7 +85,7 @@ export class DashboardComponent {
     const totalExpenses = this.calculateTotalByType('expense');
     this.chartData.datasets[0].data = [totalIncome, totalExpenses]; // Update data in chart
     if (this.chart?.chart) {
-      this.chart.chart.update(); // Force chart update if chart object exists
+      this.chart.chart.update(); // Forceert chart update als het chart chart object bestaat
     }
   }
 
