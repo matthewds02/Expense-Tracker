@@ -1,0 +1,73 @@
+<div class="dashboard">
+  <h1>Expense Tracker Dashboard</h1>
+
+  <div class="balance">
+    <h2>Balance: {{ balance | currency }}</h2>
+  </div>
+
+  <div class="stats-container">
+    <div class="stat-box income-box">
+      <h2>Income</h2>
+      <p>{{ income | currency }}</p>
+    </div>
+    <div class="stat-box expense-box">
+      <h2>Expense</h2>
+      <p>{{ expenses | currency }}</p>
+    </div>
+  </div>
+
+  <h3>Transaction Statistics</h3>
+  <canvas baseChart
+    [datasets]="chartData.datasets"
+    [labels]="chartData.labels"
+    [options]="chartOptions"
+    [legend]="true"
+    [type]="'bar'">
+  </canvas>
+
+  <h3>Add Transaction</h3>
+
+  <div class="input-group">
+    <label for="description">Description:</label>
+    <input id="description" [(ngModel)]="description" placeholder="Transaction description" type="text">
+  </div>
+
+  <div class="input-group">
+    <label for="amount">Amount:</label>
+    <input id="amount" [(ngModel)]="amount" type="number">
+  </div>
+
+  <div class="input-group">
+    <label for="transactionType">Transaction Type:</label>
+    <select [(ngModel)]="transactionType" id="transactionType">
+      <option value="income">Income</option>
+      <option value="expense">Expense</option>
+    </select>
+  </div>
+
+  <div class="button-group">
+    <button (click)="editingIndex === null ? addTransaction() :  updateTransaction(editingIndex, { description, amount, type: transactionType })"> 
+      {{ editingIndex === null ? 'Add Transaction' : 'Update Transaction' }}
+    </button>
+  </div>
+
+  <h3>Transaction History</h3>
+
+  <div class="transaction-history">
+    <ul>
+      <li *ngFor="let transaction of transactions">
+        <div class="transaction-item">
+          <span class="edit-text" (click)="editTransaction(transaction.id)">Edit</span>
+          <span class="transaction-text">
+            <span class="description">{{ transaction.description }}</span>
+            <span class="amount">{{ transaction.amount | currency }}</span>
+            <span class="transaction-type" [ngClass]="{'income': transaction.type === 'income', 'expense': transaction.type === 'expense'}">
+              ({{ transaction.type }})
+            </span>
+          </span>  
+          <span class="delete-icon" (click)="deleteTransaction(transaction.id)">X</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
