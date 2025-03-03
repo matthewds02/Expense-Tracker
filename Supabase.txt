@@ -1,4 +1,0 @@
-Supabase:
-matthew Expense Tracker password: D!M%onvon*ab4&XF
-api URL: https://sgrwtdcibnobdxixzrfm.supabase.co
-anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNncnd0ZGNpYm5vYmR4aXh6cmZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NTcyODAsImV4cCI6MjA1NjMzMzI4MH0.X7mZQYMhMqPtz9jTW9j-dlHY6EIbXamKnSr4RFQTcA0
