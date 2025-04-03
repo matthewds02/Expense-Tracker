@@ -148,4 +148,4 @@ Als je een pull request gebruikt, kun je de wijzigingen eerst pushen en via de G
 
 ---
 
-📌 Laatste update: *03/04/2024.2*
+📌 Laatste update: *03/04/2024*
