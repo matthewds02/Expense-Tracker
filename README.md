@@ -2,6 +2,9 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.0.
 
+# 📌 Expense Tracker Stappenplan  
+Bekijk het volledige stappenplan in [stappenplan.md](stappenplan.md).
+
 ## Development server
 
 To start a local development server, run:

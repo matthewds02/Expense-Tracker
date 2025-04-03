@@ -1,3 +1,4 @@
+# ExpenseTracker
 ## 🚀 Project opstarten
 Elke keer dat je het project wilt starten, volg je deze stappen:
 ```sh
