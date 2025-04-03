@@ -7,7 +7,7 @@ import { NgChartsModule } from 'ng2-charts'; // NgChartsModule is voor het integ
 import { BaseChartDirective } from 'ng2-charts'; // BaseChartDirective wordt gebruikt om grafieken weer te geven en is nodig voor @ViewChild referentie naar het chart element
 import { ChartData, ChartOptions } from 'chart.js'; // 'ChartData' en 'ChartOptions' zijn de types voor het configureren en opmaken van de grafiekgegevens en opties in Chart.js
 import { SupabaseService } from '../../supabase.service'; // SupabaseService biedt een service om te communiceren met de Supabase backend (bijvoorbeeld voor het ophalen van transacties)
-import { TransactionService, Transaction } from '../../transaction.service'; 
+import { TransactionService, Transaction, Category } from '../../transaction.service'; 
 // TransactionService bevat methodes voor het beheren van transacties, zoals toevoegen, bewerken en verwijderen
 // 'Transaction' is het type voor de transactieobjecten die in de app worden gebruikt
 
@@ -29,8 +29,13 @@ export class DashboardComponent {
   transactionType: string = 'income';
   description: string = '';
   amount: number = 0; 
+  selectedCategory: number | null = null;
+  selectedSubcategory: number | null = null;
 
-  transactions: { id: number, type: string, description: string, amount: number }[] = [];
+  transactions: Transaction[] = [];
+  categories: Category[] = [];
+  subcategories: Category[] = [];
+  
 
   constructor(private supabaseService: SupabaseService, private transactionService: TransactionService) {}
 
@@ -60,19 +65,66 @@ export class DashboardComponent {
     this.updateBalance();
   }
 
-  async loadTransactions() {  
+  async loadTransactions() {
+    // Haal alle categorieën en subcategorieën op
+    const { categoriesMap, subcategoriesMap } = await this.loadCategoriesAndSubcategories();
+  
     const { data, error } = await this.supabaseService.client
       .from("transactions")
-      .select("id, type, description, amount")
+      .select("id, type, description, amount, category_id, subcategory_id")
       .order("created_at", { ascending: false });
   
     if (error) {
       console.error("Error fetching transactions:", error);
     } else {
-      this.transactions = data || [];
+      console.log("Raw Supabase data:", data);
+  
+      // Koppel categorieën en subcategorieën aan transacties
+      this.transactions = data?.map(transaction => ({
+        id: transaction.id,
+        type: transaction.type,
+        description: transaction.description,
+        amount: transaction.amount,
+        category: categoriesMap.get(transaction.category_id) || null,
+        subcategory: subcategoriesMap.get(transaction.subcategory_id) || null
+      })) || [];
+  
       console.log("Transactions loaded:", this.transactions);
+      console.log("categorien:", this.categories);
+      console.log("subcategories:", this.subcategories);
     }
-  }  
+  }
+
+  async loadCategoriesAndSubcategories() {
+    const { data: categories, error: categoriesError } = await this.supabaseService.client
+      .from("categories")
+      .select("id, name, parent_id");
+  
+    if (categoriesError) {
+      console.error("Error fetching categories:", categoriesError);
+      return { categoriesMap: new Map<number, { id: number; name: string }>(), subcategoriesMap: new Map<number, { id: number; name: string }>() };
+    }
+  
+    //ToDo dubbele code voor zelfde logica in loadTransactions
+    this.categories = categories?.filter(category => category.parent_id === null) || [];
+    this.subcategories = categories?.filter(category => category.parent_id !== null) || [];
+
+    // Maak mappen voor snelle toegang
+    const categoriesMap = new Map<number, { id: number; name: string }>();
+    const subcategoriesMap = new Map<number, { id: number; name: string }>();
+  
+    categories?.forEach(category => {
+      if (category.parent_id === null) {
+        // Hoofdcategorie
+        categoriesMap.set(category.id, { id: category.id, name: category.name });
+      } else {
+        // Subcategorie
+        subcategoriesMap.set(category.id, { id: category.id, name: category.name });
+      }
+    });
+
+    return { categoriesMap, subcategoriesMap };
+  }
 
   private calculateTotalByType(type: string): number {
     return this.transactions
@@ -99,58 +151,113 @@ export class DashboardComponent {
     this.description = '';
     this.amount = 0;
     this.transactionType = 'income';
+    this.selectedCategory = null;
+    this.selectedSubcategory = null;
     this.editingIndex = null;
   }
 
   async addTransaction() {
+    // Validatie van de velden
+    //ToDo: Verplaats naar een aparte functie + 'foutmeldingscomponent toe te voegen die de foutberichten op een gebruiksvriendelijke manier toont in de UI. Dit maakt de app gebruiksvriendelijker, vooral als er meerdere validatiefouten optreden.'
+
+    if (!this.description.trim()) {
+      alert('Beschrijving is verplicht');
+      return;
+    }
+    if (this.amount <= 0) {
+      alert('Bedrag moet groter dan 0 zijn');
+      return;
+    }
+    if (this.selectedCategory === null) {
+      alert('Categorie is verplicht');
+      return;
+    }
+    if (this.selectedSubcategory === null) {
+      alert('Subcategorie is verplicht');
+      return;
+    }
+
     const { data, error } = await this.supabaseService.client
       .from('transactions')
       .insert([
-        { type: this.transactionType, description: this.description, amount: this.amount }
+        { type: this.transactionType, description: this.description, amount: this.amount, category_id: this.selectedCategory, subcategory_id: this.selectedSubcategory}
       ])
       .select(); //Zorgt ervoor dat Supabase de nieuwe transactie terugstuurt met het gegenereerde ID
-  
+
     if (error) {
       console.error('Error adding transaction:', error);
       return;
     }
-  
+
     if (data && data.length > 0) {
       const newTransaction = data[0]; //Dit bevat de nieuwe transactie inclusief ID
-  
+
       this.transactions.push({
         id: newTransaction.id, //Voeg het ID toe aan de array
         type: newTransaction.type,
         description: newTransaction.description,
-        amount: newTransaction.amount
+        amount: newTransaction.amount,
+        category: this.categories.find(cat => cat.id === newTransaction.category_id) || null,
+        subcategory: this.subcategories.find(subcat => subcat.id === newTransaction.subcategory_id) || null
       });
-  
+
       this.updateBalance();
       this.updateChartData();
       this.clearForm();
     }
   }
 
-  editTransaction(id: number) {
+  async editTransaction(id: number) {
     const transaction = this.transactions.find(t => t.id === id);
     if (transaction) {
       this.description = transaction.description;
       this.amount = transaction.amount;
       this.transactionType = transaction.type;
-      this.editingIndex = id; //Bijhouden van het ID van de bewerkte transactie
+      this.selectedCategory = transaction.category?.id || null;
+  
+      if (this.selectedCategory) {
+        await this.loadSubcategories(this.selectedCategory); // Wacht tot de subcategorieën geladen zijn
+        this.selectedSubcategory = transaction.subcategory?.id || null;
+      } else {
+        this.selectedSubcategory = null;
+      }
+  
+      this.editingIndex = id;
     }
   }
 
   async updateTransaction(id: number, updatedData: Partial<Transaction>) {
+    // Validatie van de velden
+    if (!updatedData.description || !updatedData.description.trim()) {
+      alert('Beschrijving is verplicht');
+      return;
+    }
+    if ((updatedData.amount ?? 0) <= 0) {
+      alert('Bedrag moet groter dan 0 zijn');
+      return;
+    }
+    if (!updatedData.category) {
+      alert('Categorie is verplicht');
+      return;
+    }
+    if (!updatedData.subcategory) {
+      alert('Subcategorie is verplicht');
+      return;
+    }
+
     await this.transactionService.updateTransaction(id, updatedData);
   
     const index = this.transactions.findIndex(t => t.id === id);
     if (index !== -1) {
       this.transactions[index] = { 
         ...this.transactions[index], //Behoud bestaande waarden
-        ...updatedData               //Overschrijf met nieuwe waarden
+        ...updatedData,               //Overschrijf met nieuwe waarden
+        category: this.categories.find(cat => cat.id === updatedData.category?.id) || null,
+        subcategory: this.subcategories.find(subcat => subcat.id === updatedData.subcategory?.id) || null  
       };
+      console.log("test1:", this.transactions[index].category, this.transactions[index].subcategory);
     }
+    console.log("test2:", this.transactions[index]);
   
     this.updateBalance();
     this.updateChartData();
@@ -168,5 +275,37 @@ export class DashboardComponent {
     this.updateBalance();
     this.updateChartData(); // Update chart data
     this.clearForm();
-  }  
+  }
+
+  async loadSubcategories(categoryId: number) {
+    const { data, error } = await this.supabaseService.client
+      .from("categories")
+      .select("id, name")
+      .eq("parent_id", categoryId);
+  
+    if (error) {
+      console.error("Error fetching subcategories:", error);
+    } else {
+      this.subcategories = data || [];
+      console.log("Subcategories loaded:", this.subcategories);
+    }
+  }
+
+  onCategoryChange() {
+    if (this.selectedCategory) {
+      this.loadSubcategories(this.selectedCategory);
+    } else {
+      this.subcategories = []; // Leeg de subcategorieën als er geen categorie is geselecteerd
+    }
+  }
+
+  getCategoryName(categoryId: number): string {
+    const category = this.categories.find(cat => cat.id === Number(categoryId));
+    return category ? category.name : '';
+  }
+
+  getSubcategoryName(subcategoryId: number): string {
+    const subcategory = this.subcategories.find(subcat => subcat.id === Number(subcategoryId));
+    return subcategory ? subcategory.name : '';
+  }
 }

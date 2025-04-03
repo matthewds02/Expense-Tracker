@@ -26,6 +26,20 @@
   </canvas>
 
   <h3>Add Transaction</h3>
+  
+  <div class="input-group">
+    <label for="category">Categorie:</label>
+    <select id="category" [(ngModel)]="selectedCategory" name="category" (ngModelChange)="selectedCategory = +$event" (change)="onCategoryChange()" required>
+      <option *ngFor="let category of categories" [value]="+category.id">{{ category.name }}</option>
+    </select>  
+  </div>
+
+  <div class="input-group">
+    <label for="subcategory">Subcategorie</label>
+    <select id="subcategory" [(ngModel)]="selectedSubcategory" name="subcategory" (ngModelChange)="selectedSubcategory = +$event" required>
+      <option *ngFor="let subcategory of subcategories" [value]="+subcategory.id">{{ subcategory.name }}</option>
+    </select>
+  </div>
 
   <div class="input-group">
     <label for="description">Description:</label>
@@ -46,7 +60,19 @@
   </div>
 
   <div class="button-group">
-    <button (click)="editingIndex === null ? addTransaction() :  updateTransaction(editingIndex, { description, amount, type: transactionType })"> 
+    <button (click)="editingIndex === null 
+      ? addTransaction() 
+      : updateTransaction(editingIndex, { 
+          description, 
+          amount, 
+          type: transactionType, 
+          category: selectedCategory !== null 
+            ? { id: selectedCategory, name: getCategoryName(selectedCategory) } 
+            : null, 
+          subcategory: selectedSubcategory !== null 
+            ? { id: selectedSubcategory, name: getSubcategoryName(selectedSubcategory) } 
+            : null 
+        })"> 
       {{ editingIndex === null ? 'Add Transaction' : 'Update Transaction' }}
     </button>
   </div>
@@ -59,11 +85,13 @@
         <div class="transaction-item">
           <span class="edit-text" (click)="editTransaction(transaction.id)">Edit</span>
           <span class="transaction-text">
+            <span class="category">{{ transaction.category?.name || 'Geen categorie' }}</span>
+            <span class="subcategory">{{ transaction.subcategory?.name || 'Geen subcategorie' }}</span>
             <span class="description">{{ transaction.description }}</span>
             <span class="amount">{{ transaction.amount | currency }}</span>
             <span class="transaction-type" [ngClass]="{'income': transaction.type === 'income', 'expense': transaction.type === 'expense'}">
               ({{ transaction.type }})
-            </span>
+            </span>  
           </span>  
           <span class="delete-icon" (click)="deleteTransaction(transaction.id)">X</span>
         </div>

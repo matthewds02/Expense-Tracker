@@ -28,14 +28,16 @@ export class TransactionService {
     }
   }
 
-  
-
   async updateTransaction(id: number, updatedData: Partial<Transaction>) {
     const { error } = await this.supabase
       .from('transactions')
-      .update(updatedData)
+      .update({
+        description: updatedData.description,
+        amount: updatedData.amount,
+        type: updatedData.type,
+         category_id: updatedData.category?.id, 
+         subcategory_id: updatedData.subcategory?.id})
       .match({ id });
-
     if (error) {
       console.error('Error updating transaction:', error.message);
     } else {
@@ -45,9 +47,15 @@ export class TransactionService {
 }
 
 export interface Transaction {
-    id: number;
-    amount: number;
-    description: string;
-    type: string;
-    date: string;
-  }
+  id: number;
+  amount: number;
+  description: string;
+  type: string;
+  category: Category | null;
+  subcategory: Category | null;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+}
