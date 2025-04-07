@@ -36,6 +36,15 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
 - [ ] Uitbreiden met meer grafieken (bijv. maandelijkse uitgaven, categorie-verdeling)
 - [ ] Pie chart voor categorie-uitgaven
 - [ ] Line chart voor saldo over tijd
+- [ ] updateChartData() automatisch triggeren via effect() i.p.v. manueel
+   ```bash
+   import { effect } from '@angular/core';
+
+   effect(() => {
+     this.updateChartData();
+   });
+   ```
+✅ Suggestie:
 
 ### 📂 **Categorieën & Subcategorieën uitbreiden**
 - [x] Toevoegen van categorieën en subcategorieën
@@ -47,6 +56,17 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
 - [ ] Sorteren op datum / bedrag / categorie
 - [ ] Toevoegen van tags of notities aan transacties
 - [ ] Zoekfunctie binnen transacties
+- [ ] Filtering optimaliseren ( getFilteredTransactions() ):
+   ```bash
+   if (monthKey !== this.lastSelectedMonth) {
+     this.cachedFiltered = ...
+     this.lastSelectedMonth = monthKey;
+   }
+   ```
+   Maar je cachet nu enkel de laatste maand. Overweeg:
+   ✅ Verbetering: gebruik een Map<string, Transaction[]> om meerdere maanden te cachen:
+   filteredTransactionCache: Map<string, Transaction[]>
+
 ---
 
 ## 💾 **2. Data-opslag & Backend**
@@ -63,6 +83,10 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
 - [ ] filteredTransactions wordt vaak herberekend -> Je gebruikt een getter filteredTransactions, die elke keer opnieuw filtert op basis van selectedMonth.
       Deze wordt impliciet vaak opnieuw getriggerd in de template én door updateBalance() en updateChartData().
       Dit kan leiden tot onnodige re-computations, zeker als je een grote lijst transacties hebt.
+- [ ] State management of memorization (Angular houdt alles in de component zelf. Voor performance:)
+      #Voeg een dedicated service toe voor state (TransactionStoreService), waarin je transacties, categorieën en maand-selectie opslaat, en enkel subscribes in je component.
+      Of gebruik bij grotere apps een lib zoals NgRx of SignalStore.
+
 
 ---
 
