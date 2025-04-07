@@ -19,6 +19,8 @@ import { TransactionService, Transaction, Category } from '../../transaction.ser
   styleUrls: ['./dashboard.component.scss']
 })
 
+
+
 export class DashboardComponent {
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
@@ -29,6 +31,8 @@ export class DashboardComponent {
   transactionType: string = 'income';
   description: string = '';
   amount: number = 0; 
+  date_activity_happened: Date = new Date();
+  date_payment_happened: Date = new Date();
   selectedCategory: number | null = null;
   selectedSubcategory: number | null = null;
 
@@ -38,6 +42,30 @@ export class DashboardComponent {
   
 
   constructor(private supabaseService: SupabaseService, private transactionService: TransactionService) {}
+
+  get dateActivityString(): string {
+    if (!this.date_activity_happened) return '';
+    const date = this.date_activity_happened instanceof Date
+      ? this.date_activity_happened
+      : new Date(this.date_activity_happened);
+    return date.toISOString().split('T')[0];    
+  }
+
+  set dateActivityString(value: string) {
+    this.date_activity_happened = new Date(value);
+  }
+
+  get datePaymentString(): string {
+    if (!this.date_payment_happened) return '';
+    const date = this.date_payment_happened instanceof Date
+      ? this.date_payment_happened
+      : new Date(this.date_payment_happened);
+    return date.toISOString().split('T')[0];
+  }
+
+  set datePaymentString(value: string) {
+    this.date_payment_happened = new Date(value);
+  }
 
   chartData: ChartData<'bar'> = {
     labels: ['Income', 'Expense'],
@@ -71,7 +99,7 @@ export class DashboardComponent {
   
     const { data, error } = await this.supabaseService.client
       .from("transactions")
-      .select("id, type, description, amount, category_id, subcategory_id")
+      .select("id, type, description, amount, date_activity_happened, date_payment_happened, category_id, subcategory_id")
       .order("created_at", { ascending: false });
   
     if (error) {
@@ -85,6 +113,8 @@ export class DashboardComponent {
         type: transaction.type,
         description: transaction.description,
         amount: transaction.amount,
+        date_activity_happened: transaction.date_activity_happened,
+        date_payment_happened: transaction.date_payment_happened,
         category: categoriesMap.get(transaction.category_id) || null,
         subcategory: subcategoriesMap.get(transaction.subcategory_id) || null
       })) || [];
@@ -153,6 +183,8 @@ export class DashboardComponent {
     this.transactionType = 'income';
     this.selectedCategory = null;
     this.selectedSubcategory = null;
+    this.date_activity_happened = new Date();
+    this.date_payment_happened = new Date();
     this.editingIndex = null;
   }
 
@@ -197,6 +229,8 @@ export class DashboardComponent {
         type: newTransaction.type,
         description: newTransaction.description,
         amount: newTransaction.amount,
+        date_activity_happened: newTransaction.date_activity_happened,
+        date_payment_happened: newTransaction.date_payment_happened,
         category: this.categories.find(cat => cat.id === newTransaction.category_id) || null,
         subcategory: this.subcategories.find(subcat => subcat.id === newTransaction.subcategory_id) || null
       });
@@ -214,6 +248,8 @@ export class DashboardComponent {
       this.amount = transaction.amount;
       this.transactionType = transaction.type;
       this.selectedCategory = transaction.category?.id || null;
+      this.date_activity_happened = transaction.date_activity_happened;
+      this.date_payment_happened = transaction.date_payment_happened;
   
       if (this.selectedCategory) {
         await this.loadSubcategories(this.selectedCategory); // Wacht tot de subcategorieën geladen zijn

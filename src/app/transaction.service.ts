@@ -35,8 +35,10 @@ export class TransactionService {
         description: updatedData.description,
         amount: updatedData.amount,
         type: updatedData.type,
-         category_id: updatedData.category?.id, 
-         subcategory_id: updatedData.subcategory?.id})
+        date_activity_happened: updatedData.date_activity_happened,
+        date_payment_happened: updatedData.date_payment_happened,
+        category_id: updatedData.category?.id, 
+        subcategory_id: updatedData.subcategory?.id})
       .match({ id });
     if (error) {
       console.error('Error updating transaction:', error.message);
@@ -50,6 +52,8 @@ export interface Transaction {
   id: number;
   amount: number;
   description: string;
+  date_activity_happened: Date;
+  date_payment_happened: Date;
   type: string;
   category: Category | null;
   subcategory: Category | null;

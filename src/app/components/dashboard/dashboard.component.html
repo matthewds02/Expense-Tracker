@@ -1,8 +1,8 @@
 <div class="dashboard">
   <h1>Expense Tracker Dashboard</h1>
 
-  <div class="balance">
-    <h2>Balance: {{ balance | currency }}</h2>
+  <div class="balance" [ngClass]="{ 'income': balance >= 0, 'expense': balance < 0 }">
+    <h2>Balance: <span>{{ balance | currency }}</span></h2>
   </div>
 
   <div class="stats-container">
@@ -52,6 +52,16 @@
   </div>
 
   <div class="input-group">
+    <label for="date_activity">Datum gebeurd:</label>
+    <input id="date_activity" [(ngModel)]="dateActivityString" type="date" >
+  </div>
+
+  <div class="input-group">
+    <label for="date_payment">Datum betaling:</label>
+    <input id="date_payment" [(ngModel)]="datePaymentString" type="date">
+  </div>
+
+  <div class="input-group">
     <label for="transactionType">Transaction Type:</label>
     <select [(ngModel)]="transactionType" id="transactionType">
       <option value="income">Income</option>
@@ -66,6 +76,8 @@
           description, 
           amount, 
           type: transactionType, 
+          date_activity_happened,
+          date_payment_happened,
           category: selectedCategory !== null 
             ? { id: selectedCategory, name: getCategoryName(selectedCategory) } 
             : null, 
@@ -84,7 +96,7 @@
       <li *ngFor="let transaction of transactions">
         <div class="transaction-item">
           <span class="edit-text" (click)="editTransaction(transaction.id)">Edit</span>
-          <span class="transaction-text">
+            <span class="transaction-text">
             <span class="category">{{ transaction.category?.name || 'Geen categorie' }}</span>
             <span class="subcategory">{{ transaction.subcategory?.name || 'Geen subcategorie' }}</span>
             <span class="description">{{ transaction.description }}</span>
@@ -92,6 +104,7 @@
             <span class="transaction-type" [ngClass]="{'income': transaction.type === 'income', 'expense': transaction.type === 'expense'}">
               ({{ transaction.type }})
             </span>  
+            <span class="date_activity">{{ transaction.date_activity_happened ? transaction.date_activity_happened.toString().split('T')[0] : '' }}</span>
           </span>  
           <span class="delete-icon" (click)="deleteTransaction(transaction.id)">X</span>
         </div>
