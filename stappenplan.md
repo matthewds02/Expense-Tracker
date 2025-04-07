@@ -44,7 +44,6 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
      this.updateChartData();
    });
    ```
-✅ Suggestie:
 
 ### 📂 **Categorieën & Subcategorieën uitbreiden**
 - [x] Toevoegen van categorieën en subcategorieën
@@ -63,8 +62,8 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
      this.lastSelectedMonth = monthKey;
    }
    ```
-   Maar je cachet nu enkel de laatste maand. Overweeg:
-   ✅ Verbetering: gebruik een Map<string, Transaction[]> om meerdere maanden te cachen:
+   Maar je cachet nu enkel de laatste maand. Overweeg:\
+   ✅ Verbetering: gebruik een Map<string, Transaction[]> om meerdere maanden te cachen:\
    filteredTransactionCache: Map<string, Transaction[]>
 
 ---
