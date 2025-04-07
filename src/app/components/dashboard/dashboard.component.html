@@ -1,6 +1,17 @@
 <div class="dashboard">
   <h1>Expense Tracker Dashboard</h1>
 
+  <div class="month-selector">
+    <button 
+      *ngFor="let m of cachedAvailableMonths"
+      (click)="selectMonth(m)"
+      [class.active]="selectedMonth?.month === m.month && selectedMonth?.year === m.year"
+    >
+      {{ m.label }}
+    </button>
+    <button (click)="clearMonthSelection()" *ngIf="selectedMonth">Toon alles</button>
+  </div>
+
   <div class="balance" [ngClass]="{ 'income': balance >= 0, 'expense': balance < 0 }">
     <h2>Balance: <span>{{ balance | currency }}</span></h2>
   </div>
@@ -93,7 +104,7 @@
 
   <div class="transaction-history">
     <ul>
-      <li *ngFor="let transaction of transactions; trackBy: trackById">
+      <li *ngFor="let transaction of filteredTransactions; trackBy: trackById">
         <div class="transaction-item">
           <span class="edit-text" (click)="editTransaction(transaction.id)">Edit</span>
             <span class="transaction-text">

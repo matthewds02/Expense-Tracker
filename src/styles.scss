@@ -219,3 +219,23 @@ ul li {
     transform: translateY(0);
   }
 }
+
+.month-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    background-color: #eee;
+    border-radius: 5px;
+    cursor: pointer;
+
+    &.active {
+      background-color: #2196F3;
+      color: white;
+    }
+  }
+}

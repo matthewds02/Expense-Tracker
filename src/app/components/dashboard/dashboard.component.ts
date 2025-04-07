@@ -35,11 +35,14 @@ export class DashboardComponent {
   date_payment_happened: Date = new Date();
   selectedCategory: number | null = null;
   selectedSubcategory: number | null = null;
+  private cachedFiltered: Transaction[] = [];
+  private lastSelectedMonth: string = '';
+  cachedAvailableMonths: { month: number; year: number; label: string }[] = [];
 
   transactions: Transaction[] = [];
   categories: Category[] = [];
   subcategories: Category[] = [];
-  
+  selectedMonth: { year: number, month: number } | null = null;
 
   constructor(private supabaseService: SupabaseService, private transactionService: TransactionService) {}
 
@@ -67,6 +70,22 @@ export class DashboardComponent {
     this.date_payment_happened = new Date(value);
   }
 
+  get availableMonths(): { year: number, month: number, label: string }[] {
+    return this.cachedAvailableMonths;
+  }
+
+  get filteredTransactions(): Transaction[] {
+    if (!this.selectedMonth) return this.transactions;
+  
+    return this.transactions.filter(t => {
+      const date = new Date(t.date_activity_happened);
+      return (
+        date.getFullYear() === this.selectedMonth!.year &&
+        date.getMonth() === this.selectedMonth!.month
+      );
+    });
+  }
+
   formatDate(date: string | Date | null | undefined): string {
     if (!date) return '';
     const parsedDate = typeof date === 'string' ? new Date(date) : date;
@@ -77,9 +96,10 @@ export class DashboardComponent {
     return `${day}-${month}-${year}`;
   }
 
-  trackById(index: number, item: Transaction) {
-  return item.id;
+  trackById(index: number, item: Transaction): number | string {
+    return item.id ?? index;
   }
+  
 
   chartData: ChartData<'bar'> = {
     labels: ['Income', 'Expense'],
@@ -103,9 +123,6 @@ export class DashboardComponent {
 
   async ngOnInit() {
     await this.loadTransactions();
-    if (this.selectedCategory) {
-      await this.loadSubcategories(this.selectedCategory);
-    }
     this.updateChartData();
     this.updateBalance();
   }
@@ -140,6 +157,7 @@ export class DashboardComponent {
       console.log("categorien:", this.categories);
       console.log("subcategories:", this.subcategories);
     }
+    this.computeAvailableMonths();
   }
 
   async loadCategoriesAndSubcategories() {
@@ -174,7 +192,7 @@ export class DashboardComponent {
   }
 
   private calculateTotalByType(type: string): number {
-    return this.transactions
+    return this.filteredTransactions
       .filter(t => t.type === type)
       .reduce((sum, t) => sum + t.amount, 0);
   }
@@ -182,9 +200,10 @@ export class DashboardComponent {
   updateChartData() {
     const totalIncome = this.calculateTotalByType('income');
     const totalExpenses = this.calculateTotalByType('expense');
-    this.chartData.datasets[0].data = [totalIncome, totalExpenses]; // Update data in chart
-    if (this.chart?.chart) {
-      this.chart.chart.update(); // Forceert chart update als het chart chart object bestaat
+    const currentData = this.chartData.datasets[0].data;
+    if (currentData[0] !== totalIncome || currentData[1] !== totalExpenses) {
+      this.chartData.datasets[0].data = [totalIncome, totalExpenses];
+      this.chart?.chart?.update();
     }
   }
 
@@ -252,6 +271,7 @@ export class DashboardComponent {
         subcategory: this.subcategories.find(subcat => subcat.id === newTransaction.subcategory_id) || null
       });
 
+      this.cachedFiltered = [];
       this.updateBalance();
       this.updateChartData();
       this.clearForm();
@@ -310,7 +330,8 @@ export class DashboardComponent {
       };
       //console.log("test1:", this.transactions[index].category, this.transactions[index].subcategory);
     }
-  
+    
+    this.cachedFiltered = [];
     this.updateBalance();
     this.updateChartData();
     this.clearForm();
@@ -320,12 +341,15 @@ export class DashboardComponent {
     // Verwijder de transactie uit de database
     await this.transactionService.deleteTransaction(id);
     
-    this.transactions = this.transactions.filter(t => t.id !== id);
-
-    // Werk het saldo bij na het verwijderen
-    this.loadTransactions();
+    const index = this.transactions.findIndex(t => t.id === id);
+    if (index !== -1) {
+      this.transactions.splice(index, 1);
+    }
+  
+    this.computeAvailableMonths(); // herbereken maandenlijst
+    this.cachedFiltered = []; // forceer herfilter bij volgende call
     this.updateBalance();
-    this.updateChartData(); // Update chart data
+    this.updateChartData();
   }
 
   async loadSubcategories(categoryId: number) {
@@ -359,4 +383,59 @@ export class DashboardComponent {
     const subcategory = this.subcategories.find(subcat => subcat.id === Number(subcategoryId));
     return subcategory ? subcategory.name : '';
   }
+
+  selectMonth(month: { year: number, month: number }) {
+    this.selectedMonth = month;
+    this.updateChartData();
+    this.updateBalance();
+  }
+  
+  clearMonthSelection() {
+    this.selectedMonth = null;
+    this.updateChartData();
+    this.updateBalance();
+  }
+
+  private computeAvailableMonths() {
+    const monthSet = new Set<string>();
+  
+    this.transactions.forEach(t => {
+      const date = new Date(t.date_activity_happened);
+      const key = `${date.getFullYear()}-${date.getMonth()}`;
+      monthSet.add(key);
+    });
+  
+    this.cachedAvailableMonths = Array.from(monthSet).map(key => {
+      const [year, month] = key.split('-').map(Number);
+      const date = new Date(year, month);
+      return {
+        year,
+        month,
+        label: date.toLocaleString('default', { month: 'long', year: 'numeric' })
+      };
+    }).sort((a, b) =>
+      b.year !== a.year ? b.year - a.year : b.month - a.month
+    );
+  }
+
+  private validateTransaction(data: Partial<Transaction>): boolean {
+  if (!data.description || !data.description.trim()) {
+    alert('Beschrijving is verplicht');
+    return false;
+  }
+  if ((data.amount ?? 0) <= 0) {
+    alert('Bedrag moet groter dan 0 zijn');
+    return false;
+  }
+  if (!data.category) {
+    alert('Categorie is verplicht');
+    return false;
+  }
+  if (!data.subcategory) {
+    alert('Subcategorie is verplicht');
+    return false;
+  }
+  return true;
+}
+  
 }

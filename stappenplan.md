@@ -59,6 +59,10 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
 ### 🔄 **Persistentie uitbreiden**
 - [ ] Lokale opslag (localStorage) voor snelle caching
 - [ ] Offline-modus: gegevens opslaan en later synchroniseren
+- [ ] loadTransactions() -> Voeg caching toe voor categoriesMap en subcategoriesMap
+- [ ] filteredTransactions wordt vaak herberekend -> Je gebruikt een getter filteredTransactions, die elke keer opnieuw filtert op basis van selectedMonth.
+      Deze wordt impliciet vaak opnieuw getriggerd in de template én door updateBalance() en updateChartData().
+      Dit kan leiden tot onnodige re-computations, zeker als je een grote lijst transacties hebt.
 
 ---
 
