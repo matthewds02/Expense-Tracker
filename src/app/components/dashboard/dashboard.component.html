@@ -93,18 +93,18 @@
 
   <div class="transaction-history">
     <ul>
-      <li *ngFor="let transaction of transactions">
+      <li *ngFor="let transaction of transactions; trackBy: trackById">
         <div class="transaction-item">
           <span class="edit-text" (click)="editTransaction(transaction.id)">Edit</span>
             <span class="transaction-text">
-            <span class="category">{{ transaction.category?.name || 'Geen categorie' }}</span>
-            <span class="subcategory">{{ transaction.subcategory?.name || 'Geen subcategorie' }}</span>
+            <span class="category">{{ transaction.category?.name }}</span>
+            <span class="subcategory">{{ transaction.subcategory?.name }}</span>
             <span class="description">{{ transaction.description }}</span>
             <span class="amount">{{ transaction.amount | currency }}</span>
             <span class="transaction-type" [ngClass]="{'income': transaction.type === 'income', 'expense': transaction.type === 'expense'}">
               ({{ transaction.type }})
             </span>  
-            <span class="date_activity">{{ transaction.date_activity_happened ? transaction.date_activity_happened.toString().split('T')[0] : '' }}</span>
+            <span class="date_activity">{{ formatDate(transaction.date_activity_happened) }}</span>
           </span>  
           <span class="delete-icon" (click)="deleteTransaction(transaction.id)">X</span>
         </div>

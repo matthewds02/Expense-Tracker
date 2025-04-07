@@ -42,6 +42,11 @@ Dit document bevat mogelijke uitbreidingen en verbeteringen voor de Expense Trac
 - [ ] Mogelijkheid om zelf categorieën toe te voegen
 - [ ] UI verbeteren voor categorie-keuze
 
+### 📂 **Transacties**
+- [ ] Filter op maand/categorie
+- [ ] Sorteren op datum / bedrag / categorie
+- [ ] Toevoegen van tags of notities aan transacties
+- [ ] Zoekfunctie binnen transacties
 ---
 
 ## 💾 **2. Data-opslag & Backend**
@@ -148,4 +153,4 @@ Als je een pull request gebruikt, kun je de wijzigingen eerst pushen en via de G
 
 ---
 
-📌 Laatste update: *03/04/2024*
+📌 Laatste update: *07/04/2024*

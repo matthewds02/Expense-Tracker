@@ -67,6 +67,20 @@ export class DashboardComponent {
     this.date_payment_happened = new Date(value);
   }
 
+  formatDate(date: string | Date | null | undefined): string {
+    if (!date) return '';
+    const parsedDate = typeof date === 'string' ? new Date(date) : date;
+    const day = parsedDate.getDate().toString().padStart(2, '0');
+    const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0'); // maand is 0-based
+    const year = parsedDate.getFullYear();
+
+    return `${day}-${month}-${year}`;
+  }
+
+  trackById(index: number, item: Transaction) {
+  return item.id;
+  }
+
   chartData: ChartData<'bar'> = {
     labels: ['Income', 'Expense'],
     datasets: [
@@ -89,6 +103,9 @@ export class DashboardComponent {
 
   async ngOnInit() {
     await this.loadTransactions();
+    if (this.selectedCategory) {
+      await this.loadSubcategories(this.selectedCategory);
+    }
     this.updateChartData();
     this.updateBalance();
   }
@@ -113,8 +130,8 @@ export class DashboardComponent {
         type: transaction.type,
         description: transaction.description,
         amount: transaction.amount,
-        date_activity_happened: transaction.date_activity_happened,
-        date_payment_happened: transaction.date_payment_happened,
+        date_activity_happened: new Date(transaction.date_activity_happened),
+        date_payment_happened: new Date(transaction.date_payment_happened),
         category: categoriesMap.get(transaction.category_id) || null,
         subcategory: subcategoriesMap.get(transaction.subcategory_id) || null
       })) || [];
@@ -212,7 +229,7 @@ export class DashboardComponent {
     const { data, error } = await this.supabaseService.client
       .from('transactions')
       .insert([
-        { type: this.transactionType, description: this.description, amount: this.amount, category_id: this.selectedCategory, subcategory_id: this.selectedSubcategory}
+        { type: this.transactionType, description: this.description, amount: this.amount, category_id: this.selectedCategory, subcategory_id: this.selectedSubcategory, date_activity_happened: this.date_activity_happened.toISOString(), date_payment_happened: this.date_payment_happened.toISOString()}
       ])
       .select(); //Zorgt ervoor dat Supabase de nieuwe transactie terugstuurt met het gegenereerde ID
 
@@ -224,8 +241,8 @@ export class DashboardComponent {
     if (data && data.length > 0) {
       const newTransaction = data[0]; //Dit bevat de nieuwe transactie inclusief ID
 
-      this.transactions.push({
-        id: newTransaction.id, //Voeg het ID toe aan de array
+      this.transactions.unshift({ // unshift = Voegt aan het begin van de array tegenover push die aan het einde toevoegt
+        id: newTransaction.id,
         type: newTransaction.type,
         description: newTransaction.description,
         amount: newTransaction.amount,
@@ -291,9 +308,8 @@ export class DashboardComponent {
         category: this.categories.find(cat => cat.id === updatedData.category?.id) || null,
         subcategory: this.subcategories.find(subcat => subcat.id === updatedData.subcategory?.id) || null  
       };
-      console.log("test1:", this.transactions[index].category, this.transactions[index].subcategory);
+      //console.log("test1:", this.transactions[index].category, this.transactions[index].subcategory);
     }
-    console.log("test2:", this.transactions[index]);
   
     this.updateBalance();
     this.updateChartData();
@@ -310,7 +326,6 @@ export class DashboardComponent {
     this.loadTransactions();
     this.updateBalance();
     this.updateChartData(); // Update chart data
-    this.clearForm();
   }
 
   async loadSubcategories(categoryId: number) {
